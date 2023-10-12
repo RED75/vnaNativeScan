@@ -7,6 +7,8 @@ import traceback
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+import VNARequestBuilder
 sns.set()
 
 # TODO: write interface for listener, and implement listener for data visualising
@@ -163,12 +165,34 @@ class VNA():
 
         records = self._get_records(F_start, F_stop, n_steps, timeout=10000)
 
+    def scanPro2Native(self, F_start: int = 10_000_000, F_stop: int = 10_001_000, n_steps: int = 1000, averages: int = 10):
+        """
+        scan mini vna pro 1300 using native byte protocol for setting scaning parametres
+        :return:
+        """
+        self.comPort.reset_input_buffer()
+        self.comPort.reset_output_buffer()
+        vna_request_builder = VNARequestBuilder(F_start, F_stop, n_steps, averages)
+
+        self.comPort.write(vna_request_builder.get_codes())
+        #
+        # self.comPort.write(bytes(f"{self._F_to_dds_ticks(F_start)}\r", "us-ascii"))  # send start frequency in dds ticks
+        # self.comPort.write(bytes(f"{scan_mode:d}\r", "us-ascii"))  # if (dib.isFixed6dBOnThru()) 20 else 0
+        # self.comPort.write(bytes(f"{unknown:d}\r", "us-ascii"))  # SampleRate # dont have a guess what is it needed for
+        # self.comPort.write(bytes(f"{n_steps:d}\r", "us-ascii"))  # n of steps
+        # self.comPort.write(bytes(f"{step_dds:d}\r", "us-ascii"))  # nomber of dds ticks per step
+        #
+
+        self.comPort.flush()
+        records = self._get_records(F_start, F_stop, n_steps, timeout=10000)
+
+
 
 if __name__ == '__main__':
     with VNA(com="COM3") as vna:
+        vna.scanPro2Native()
         #vna.scan(F_start=9_999_500, F_stop=10_000_500, n_steps=1000, scan_mode=0, unknown=-10)# working 0,20, 1 but with timeout=10000
-        vna.scan(F_start=9_999_500, F_stop=10_000_500, n_steps=1000, scan_mode=20,
-                 unknown=0)  # working 0,100
+        #vna.scan(F_start=9_999_500, F_stop=10_000_500, n_steps=1000, scan_mode=20, unknown=0)  # working 0,100
 
         # vna.start_generator(10_000_000,10_000_000)
         # time.sleep(2)
@@ -189,9 +213,6 @@ if __name__ != '__main__':
 
     try:
         while True:
-            # str = bytes(input(),'ascii')
-
-            # str = input(">> ")
             if str == "": comPort.flush()
 
             # print(str)
@@ -208,19 +229,5 @@ if __name__ != '__main__':
 
                 time.sleep(1)
                 comPort.flush()
-
-        # data = bytes(str + '\r', 'ascii')
-        # comPort.write(bytes(str + '\r', "us-ascii"))#'\r\n'  'ascii'
-        # time.sleep(1)
-        # out=b''
-        # while comPort.inWaiting() > 0:
-        #     out=out+comPort.read(1)
-        #
-        # if out != b'':
-        #     print(out)
-
-        # comPort.flush()
-        # comPort.
-
     finally:
         comPort.close()
