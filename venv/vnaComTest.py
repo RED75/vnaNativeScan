@@ -97,10 +97,13 @@ class VNA():
             while (time.time()-start_time)*1000<timeout:
                 if (self.comPort.in_waiting >= 8):
                     buffer = self.comPort.read(8)
-                    p1 = (buffer[0] & 255) + (buffer[1] & 255) * 256
-                    p2 = (buffer[4] & 255) + (buffer[5] & 255) * 256
+                    # p1 = (buffer[0] & 255) + (buffer[1] & 255) * 256
+                    # p2 = (buffer[4] & 255) + (buffer[5] & 255) * 256
+                    p1 = (buffer[0] ) + (buffer[1] ) * 256
+                    p2 = (buffer[4] ) + (buffer[5] ) * 256
                     resultLosses.append((p2-p1)/2)
-                    print(f"step #{i} F = {F_start+i*F_step} R={resultLosses[-1]:.1f}")
+                    print(f"step #{i} F = {F_start+i*F_step:.1f} R={resultLosses[-1]:.1f}")
+                    print(f"step #{i} F = {F_start + i * F_step:.1f} Buffer = {buffer.hex()}")
                     break
                 else:
                     time.sleep(timeout/10.0/1000.0)
@@ -108,8 +111,47 @@ class VNA():
             else:
                 break
         print(f"reading InputStream finished. {len(resultLosses)} records recieved. It took {time.time() - start_function_time} seconds")
+        #sns.scatterplot(resultLosses)
+
         plt.plot(resultLosses)
         plt.show()
+
+    def _get_records_vna1300_native(self, F_start: int, F_stop: int, n_steps: int, timeout: float) -> list[float]:
+
+        """
+        read n_records records
+        :param timeout: timeout for input steam afrer witch getting data will be finished
+        :return:
+        """
+        start_function_time = time.time()
+        F_step = (F_stop - F_start)/n_steps
+        resultLosses = []
+
+        for i in range(n_steps):
+            start_time = time.time()
+            while (time.time()-start_time)*1000<timeout:
+                if (self.comPort.in_waiting >= 8*3):
+                    buffer = self.comPort.read(8*3)
+                    p1 = (buffer[0] & 255) + (buffer[1] & 255) * 256
+                    p2 = (buffer[4] & 255) + (buffer[5] & 255) * 256
+
+                    resultLosses.append((p2-p1)/2)
+                    print(f"step #{i} F = {F_start+i*F_step:.1f} R={resultLosses[-1]:.1f}")
+                    print(f"step #{i} F = {F_start+i*F_step:.1f} Buffer = {buffer.hex()}")
+                    break
+                else:
+                    time.sleep(timeout/10.0/1000.0)
+                    continue
+            else:
+                break
+        print(f"reading InputStream finished. {len(resultLosses)} records recieved. It took {time.time() - start_function_time} seconds")
+        #sns.scatterplot(resultLosses)
+
+        plt.plot(resultLosses)
+        plt.show()
+
+
+
 
     def scan(self, F_start: int, F_stop: int, n_steps: int, scan_mode: int, unknown: int):
         # print("scan_mode = {0}".format(scan_mode))
@@ -165,33 +207,32 @@ class VNA():
 
         records = self._get_records(F_start, F_stop, n_steps, timeout=10000)
 
-    def scanPro2Native(self, F_start: int = 10_000_000, F_stop: int = 10_001_000, n_steps: int = 1000, averages: int = 10):
+    def scanPro2Native(self, F_start: int = 10_000_000, F_stop: int = 10_001_000, n_steps: int = 1000, averages: int = 15):
         """
         scan mini vna pro 1300 using native byte protocol for setting scaning parametres
         :return:
         """
         self.comPort.reset_input_buffer()
         self.comPort.reset_output_buffer()
-        vna_request_builder = VNARequestBuilder(F_start, F_stop, n_steps, averages)
 
+        # base_template1 = bytearray.fromhex("40 06 e8 03 03 0f 10 00 80 96 98 00 00 00 00 00 01 00 00 00 00 00 00 00")
+        # self.comPort.write(base_template1)
+
+        vna_request_builder = VNARequestBuilder.VNARequestBuilder(F_start, F_stop, n_steps, averages)
+        print(vna_request_builder.get_codes())
         self.comPort.write(vna_request_builder.get_codes())
-        #
-        # self.comPort.write(bytes(f"{self._F_to_dds_ticks(F_start)}\r", "us-ascii"))  # send start frequency in dds ticks
-        # self.comPort.write(bytes(f"{scan_mode:d}\r", "us-ascii"))  # if (dib.isFixed6dBOnThru()) 20 else 0
-        # self.comPort.write(bytes(f"{unknown:d}\r", "us-ascii"))  # SampleRate # dont have a guess what is it needed for
-        # self.comPort.write(bytes(f"{n_steps:d}\r", "us-ascii"))  # n of steps
-        # self.comPort.write(bytes(f"{step_dds:d}\r", "us-ascii"))  # nomber of dds ticks per step
-        #
+
 
         self.comPort.flush()
-        records = self._get_records(F_start, F_stop, n_steps, timeout=10000)
+        records = self._get_records_vna1300_native(F_start, F_stop, n_steps, timeout=1000)
+        #records = self._get_records(F_start, F_stop, n_steps*3, timeout=1000)
 
 
 
 if __name__ == '__main__':
     with VNA(com="COM3") as vna:
-        vna.scanPro2Native()
-        #vna.scan(F_start=9_999_500, F_stop=10_000_500, n_steps=1000, scan_mode=0, unknown=-10)# working 0,20, 1 but with timeout=10000
+        vna.scanPro2Native(F_start= 9_999_500, F_stop = 10_001_500, n_steps = 1000, averages = 16)
+        #vna.scan(F_start=9_999_500, F_stop=10_000_500, n_steps=500, scan_mode=0, unknown=-10)# working 0,20, 1 but with timeout=10000
         #vna.scan(F_start=9_999_500, F_stop=10_000_500, n_steps=1000, scan_mode=20, unknown=0)  # working 0,100
 
         # vna.start_generator(10_000_000,10_000_000)

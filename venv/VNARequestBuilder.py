@@ -12,14 +12,14 @@ class VNARequestBuilder:
 
     parameters: list[str] = ["n_steps", "n_averages", "f_start", "f_step"]
 
-    offsets = {parameters[0]: 2, parameters[1]: 5, parameters[2]: 7, parameters[3]: 13}
+    offsets = {parameters[0]: 2, parameters[1]: 5, parameters[2]: 8, parameters[3]: 16}
     lengths = {parameters[0]: 2, parameters[1]: 1, parameters[2]: 4, parameters[3]: 4}
     values = {parameters[0]: 0, parameters[1]: 0, parameters[2]: 0, parameters[3]: 0}
 
     def __init__(self, F_start: int = 10_000_000, F_stop: int = 10_001_000, n_steps: int = 1000, averages: int = 10):
         self.parameters: list[str] = ["n_steps", "n_averages", "f_start", "f_step"]
 
-        self.offsets = {self.parameters[0]: 2, self.parameters[1]: 5, self.parameters[2]: 7, self.parameters[3]: 13}
+        self.offsets = {self.parameters[0]: 2, self.parameters[1]: 5, self.parameters[2]: 8, self.parameters[3]: 16}
         self.lengths = {self.parameters[0]: 2, self.parameters[1]: 1, self.parameters[2]: 4, self.parameters[3]: 4}
         self.values = {self.parameters[0]: 0, self.parameters[1]: 0, self.parameters[2]: 0, self.parameters[3]: 0}
 
@@ -37,8 +37,8 @@ class VNARequestBuilder:
         pass
 
     def set_F_start(self, F_start: int):
-        this.F_start = F_start
-        return this
+        self.F_start = F_start
+        return self
 
     def get_codes(self):
         generated_pattern = VNARequestBuilder.base_template.copy()
