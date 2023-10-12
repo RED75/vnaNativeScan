@@ -182,6 +182,7 @@ class VNA():
         # self.comPort.write(bytes(f"{n_steps:d}\r", "us-ascii"))  # n of steps
         # self.comPort.write(bytes(f"{step_dds:d}\r", "us-ascii"))  # nomber of dds ticks per step
         #
+
         self.comPort.flush()
         records = self._get_records(F_start, F_stop, n_steps, timeout=10000)
 
