@@ -89,6 +89,7 @@ class VNA():
         :return:
         """
 
+
         start_function_time = time.time()
         F_step = (F_stop - F_start)/n_steps
         resultLosses = []
