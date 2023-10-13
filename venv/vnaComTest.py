@@ -88,6 +88,7 @@ class VNA():
         :param timeout: timeout for input steam afrer witch getting data will be finished
         :return:
         """
+
         start_function_time = time.time()
         F_step = (F_stop - F_start)/n_steps
         resultLosses = []
